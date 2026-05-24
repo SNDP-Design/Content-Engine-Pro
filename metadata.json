@@ -1,0 +1,6 @@
+{
+  "name": "Content Engine",
+  "description": "AI-powered social media content generator for startup founders. Instantly generate platform-optimized posts for LinkedIn, X, Threads, Instagram, and Reddit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
