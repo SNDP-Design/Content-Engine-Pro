@@ -134,12 +134,11 @@ app.post("/api/generate", async (req, res): Promise<any> => {
 
     const systemInstruction = `You are "Content Engine" - an elite social media ghostwriter and strategist for startup founders.
 You turn rough source notes, pitch decks, ideas, or articles into platform-optimized, high-impact copy.
-You generate posts for five major platforms all at once:
+You generate posts for four major platforms all at once:
 1. LinkedIn (Professional, narrative lessons, spacious formatting, 1-3 line hooks, 3-5 high quality hashtags)
 2. X/Twitter (Punchy, under 280 characters strictly, bold statement hooks, bullet speed-learnings, high visual alignment)
-3. Threads (Friendly, conversational, engaging text, high-quality question/hook under 500 characters strictly)
-4. Instagram (Engaging caption with visual hook, detailed description of carousel slide design or focal image graphic, list of relevant tags)
-5. Reddit (catchy and community-native post with an informative Title and a Markdown Body formatted for tech/founder subreddits. Must be value-first, zero marketing fluff/hype, raw details and structured list of lessons).
+3. Instagram (Engaging caption with visual hook, detailed description of carousel slide design or focal image graphic, list of relevant tags)
+4. Reddit (catchy and community-native post with an informative Title and a Markdown Body formatted for tech/founder subreddits. Must be value-first, zero marketing fluff/hype, raw details and structured list of lessons).
 
 You are generating posts customized with the following parameters:
 - Hook/Narrative Style Choice: ${style || "Thought Leadership"}
@@ -149,7 +148,7 @@ You are generating posts customized with the following parameters:
 IMPORTANT WRITING STYLE GUIDELINES FOR FOUNDERS:
 - Never sound like an generic AI. Avoid buzzwords like "In today's fast-paced digital landscape", "delve deeper", "testament", "tapestry", "buckle up", "paradigm shift".
 - Write human-sounding lines, active voice, bold opinions, concrete metrics, and direct advice.
-- Respect character limits strictly: X/Twitter MUST be under 280 characters. Threads MUST be under 500 characters.
+- Respect character limits strictly: X/Twitter MUST be under 280 characters.
 - Ensure the Reddit post feels humble, conversational, and raw, sharing actionable playbooks or clear summaries.
 - Ensure the Instagram slide proposal details how to structure a carousel visual based on the post.`;
 
@@ -196,16 +195,7 @@ Output response in complete, well-formed JSON format matching the schema exactly
                   },
                   required: ["content", "hook", "hashtags", "characterCount"],
                 },
-                threads: {
-                  type: Type.OBJECT,
-                  properties: {
-                    content: { type: Type.STRING, description: "Under 500 characters conversational post. Curious hook, structured spacing, triggers comment chat" },
-                    hook: { type: Type.STRING },
-                    hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    characterCount: { type: Type.INTEGER },
-                  },
-                  required: ["content", "hook", "hashtags", "characterCount"],
-                },
+
                 instagram: {
                   type: Type.OBJECT,
                   properties: {
@@ -227,7 +217,7 @@ Output response in complete, well-formed JSON format matching the schema exactly
                   required: ["title", "content", "subredditSuggestion", "characterCount"],
                 },
               },
-              required: ["linkedin", "x", "threads", "instagram", "reddit"],
+              required: ["linkedin", "x", "instagram", "reddit"],
             },
           },
           required: ["sourceSummary", "posts"],
@@ -269,7 +259,6 @@ The user has provided the current post content and feedback instruction. Rewrite
 CHANNEL STYLE GUIDE REMINDERS:
 - LinkedIn: narrative, spacing, story-oriented hook.
 - X/Twitter: strictly under 280 chars, absolute punch, no fluff.
-- Threads: conversational, conversational hook, strictly under 500 chars.
 - Instagram: visual caption with clear image layout/ideas.
 - Reddit: Markdown, humble and factual, subreddit suited.
 
@@ -307,7 +296,7 @@ Please revise this post carefully. Return the finalized rewritten post in the JS
         characterCount: { type: Type.INTEGER },
       };
     } else {
-      // linkedin, x, threads
+      // linkedin, x
       platformProperties = {
         content: { type: Type.STRING, description: "Refined complete post text copy" },
         hook: { type: Type.STRING },

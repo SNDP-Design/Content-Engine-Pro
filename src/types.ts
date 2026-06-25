@@ -11,7 +11,6 @@ export interface ChannelPost {
 export interface GeneratedPosts {
   linkedin: ChannelPost;
   x: ChannelPost;
-  threads: ChannelPost;
   instagram: ChannelPost;
   reddit: ChannelPost;
 }
