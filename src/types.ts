@@ -8,6 +8,15 @@ export interface ChannelPost {
   characterCount: number;
 }
 
+export interface CompanyProfile {
+  companyName: string;
+  productDescription: string;
+  targetAudience: string;
+  industry: string;
+  toneOfVoice: string;
+  website?: string;
+}
+
 export interface GeneratedPosts {
   linkedin: ChannelPost;
   x: ChannelPost;

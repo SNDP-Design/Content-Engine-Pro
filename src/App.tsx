@@ -3,14 +3,16 @@ import {
   Sparkles, Link2, FileText, Settings, Award, 
   HelpCircle, Trash2, Heart, Check, Copy, Clock, 
   Search, RefreshCw, AlertCircle, Volume2, Globe, 
-  Layers, Smile, ChevronRight, User, ExternalLink, Bookmark
+  Layers, Smile, ChevronRight, User, ExternalLink, Bookmark,
+  Building, ChevronLeft, X, BookOpen, Flame, Laugh, Info
 } from "lucide-react";
 import { 
   GeneratedPackage, 
   HistoryItem, 
   HOOK_STYLES, 
   TARGET_AUDIENCES, 
-  ChannelPost 
+  ChannelPost,
+  CompanyProfile
 } from "./types";
 import VisualMockup from "./components/VisualMockup";
 
@@ -70,6 +72,108 @@ export default function App() {
 
   // Refine state
   const [isRefining, setIsRefining] = useState(false);
+
+  // Onboarding & Company Profile states
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(() => {
+    try {
+      const stored = localStorage.getItem("content_engine_company_profile");
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem("content_engine_company_profile");
+      return !stored;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const [onboardingStep, setOnboardingStep] = useState(1);
+  
+  // Forms for onboarding
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formAudience, setFormAudience] = useState("");
+  const [formIndustry, setFormIndustry] = useState("");
+  const [formTone, setFormTone] = useState("");
+  const [formWebsite, setFormWebsite] = useState("");
+
+  // Sync form inputs when profile opens
+  useEffect(() => {
+    if (companyProfile) {
+      setFormName(companyProfile.companyName || "");
+      setFormDesc(companyProfile.productDescription || "");
+      setFormAudience(companyProfile.targetAudience || "");
+      setFormIndustry(companyProfile.industry || "");
+      setFormTone(companyProfile.toneOfVoice || "");
+      setFormWebsite(companyProfile.website || "");
+    }
+  }, [companyProfile]);
+
+  // Help & Info Modals
+  const [showDocsModal, setShowDocsModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [showCampaignsModal, setShowCampaignsModal] = useState(false);
+
+  // Open profile modal to edit
+  const openCompanyProfileEdit = () => {
+    setFormName(companyProfile?.companyName || "");
+    setFormDesc(companyProfile?.productDescription || "");
+    setFormAudience(companyProfile?.targetAudience || "");
+    setFormIndustry(companyProfile?.industry || "");
+    setFormTone(companyProfile?.toneOfVoice || "");
+    setFormWebsite(companyProfile?.website || "");
+    setOnboardingStep(1);
+    setShowOnboarding(true);
+  };
+
+  // Save profile helper
+  const saveCompanyProfile = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!formName.trim() || !formDesc.trim() || !formIndustry.trim() || !formAudience.trim()) {
+      alert("Please fill in all the required fields.");
+      return;
+    }
+    const profile: CompanyProfile = {
+      companyName: formName.trim(),
+      productDescription: formDesc.trim(),
+      targetAudience: formAudience.trim(),
+      industry: formIndustry.trim(),
+      toneOfVoice: formTone.trim() || "Professional, Actionable",
+      website: formWebsite.trim()
+    };
+    setCompanyProfile(profile);
+    localStorage.setItem("content_engine_company_profile", JSON.stringify(profile));
+    setShowOnboarding(false);
+  };
+
+  // Skip onboarding with loaded pre-fill sample profile
+  const loadSampleProfile = () => {
+    setFormName("HyperSaaS Pro");
+    setFormDesc("A real-time marketing analytics workspace that lets solopreneurs and SaaS builders auto-repurpose content and track campaign channels in minutes.");
+    setFormIndustry("Marketing Tech / B2B SaaS");
+    setFormAudience("Indie Hackers, SaaS Founders, Content Creators");
+    setFormTone("Actionable, Transparent, Bold, Analytical");
+    setFormWebsite("https://hypersaas.io");
+    setOnboardingStep(3); // advance directly to confirmation review step
+  };
+
+  // Helper selectors from helper modals to draft notes
+  const handleSelectPrompt = (promptText: string) => {
+    setTextNotes(promptText);
+    setSourceType("text");
+    setShowDocsModal(false);
+  };
+
+  const handleSelectTemplate = (templateText: string) => {
+    setTextNotes(templateText);
+    setSourceType("text");
+    setShowTemplatesModal(false);
+  };
 
   // Load history from local storage on component render
   useEffect(() => {
@@ -163,6 +267,7 @@ export default function App() {
           style: selectedStyle,
           audience: selectedAudience,
           toneKeywords,
+          companyDetails: companyProfile,
         }),
       });
 
@@ -211,7 +316,8 @@ export default function App() {
           platform,
           currentContent: currentPost.content,
           refinePrompt: prompt,
-          originalSource: textNotes
+          originalSource: textNotes,
+          companyDetails: companyProfile,
         }),
       });
 
@@ -318,12 +424,38 @@ export default function App() {
         </div>
 
         <nav className="hidden md:flex gap-6 text-sm font-semibold text-slate-500 font-display">
-          <span className="text-indigo-600 border-b-2 border-indigo-600 px-1 py-1 cursor-pointer">AI Post Generator</span>
-          <span className="text-slate-400 hover:text-slate-600 px-1 py-1 cursor-pointer transition">Viral Templates</span>
-          <span className="text-slate-400 hover:text-slate-600 px-1 py-1 cursor-pointer transition">Campaign Tracks</span>
+          <span 
+            onClick={() => { setShowTemplatesModal(false); setShowCampaignsModal(false); }}
+            className="text-indigo-600 border-b-2 border-indigo-600 px-1 py-1 cursor-pointer"
+          >
+            AI Post Generator
+          </span>
+          <span 
+            onClick={() => setShowTemplatesModal(true)}
+            className="text-slate-400 hover:text-indigo-600 px-1 py-1 cursor-pointer transition flex items-center gap-1"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Viral Templates
+          </span>
+          <span 
+            onClick={() => setShowCampaignsModal(true)}
+            className="text-slate-400 hover:text-indigo-600 px-1 py-1 cursor-pointer transition flex items-center gap-1"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Campaign Tracks
+          </span>
         </nav>
 
-        <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+        <div className="flex items-center gap-3.5 pl-4 border-l border-slate-200">
+          <button 
+            onClick={openCompanyProfileEdit}
+            className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 text-xs font-black rounded-lg transition shadow-xs cursor-pointer"
+            title="Update Company Details"
+          >
+            <Building className="w-3.5 h-3.5 text-indigo-600" />
+            <span>{companyProfile ? companyProfile.companyName : "Setup Profile"}</span>
+          </button>
+
           <div className="text-right">
             <p className="text-sm font-bold text-slate-800">Product Builder</p>
             <p className="text-xs text-slate-400 font-medium font-mono">sndpdesign@gmail.com</p>
@@ -812,13 +944,546 @@ export default function App() {
           </div>
         </div>
         <div className="flex gap-4 items-center">
-          <span>Active Client Session: <span className="text-slate-700 font-semibold text-xs">Startup Founder</span></span>
+          <span>Active Client Session: <span className="text-slate-700 font-semibold text-xs">{companyProfile ? companyProfile.companyName : "Startup Founder"}</span></span>
           <span className="text-slate-200">|</span>
-          <a href="#doc-help" className="text-indigo-600 hover:underline flex items-center gap-0.5 text-xs font-bold">
+          <button 
+            onClick={() => setShowDocsModal(true)}
+            className="text-indigo-600 hover:underline flex items-center gap-1 text-xs font-bold cursor-pointer bg-transparent border-none"
+          >
             Docs &amp; Prompts <ExternalLink className="w-3.5 h-3.5 inline" id="docLinkIcon" />
-          </a>
+          </button>
         </div>
       </footer>
+
+      {/* ==================== ONBOARDING SCREENS / COMPANY DETAILS MODAL ==================== */}
+      {showOnboarding && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-5.5 text-white flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-white/20 p-1.5 rounded-lg">
+                    <Building className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">Startup Profiler</span>
+                </div>
+                <h3 className="text-xl font-extrabold tracking-tight">Onboard Your Company</h3>
+                <p className="text-xs text-indigo-100 mt-1">Configure your brand details once. We will automatically custom-tailor all future AI social generations for your product!</p>
+              </div>
+              {companyProfile && (
+                <button 
+                  onClick={() => setShowOnboarding(false)}
+                  className="p-1 rounded-lg hover:bg-white/10 text-white transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Stepper Progress Indicator */}
+            <div className="px-6 pt-5 pb-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-400 select-none">
+              <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${onboardingStep >= 1 ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"}`}>1</span>
+                  <span className={onboardingStep === 1 ? "text-slate-800" : ""}>Essentials</span>
+                </div>
+                <div className="h-0.5 flex-1 bg-slate-200" />
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${onboardingStep >= 2 ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"}`}>2</span>
+                  <span className={onboardingStep === 2 ? "text-slate-800" : ""}>Vision &amp; Persona</span>
+                </div>
+                <div className="h-0.5 flex-1 bg-slate-200" />
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${onboardingStep >= 3 ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"}`}>3</span>
+                  <span className={onboardingStep === 3 ? "text-slate-800" : ""}>Brand Voice</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-6">
+              {onboardingStep === 1 && (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-2.5 text-xs text-slate-500 mb-2 font-medium">
+                    <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                    <p>Enter your core brand metadata. This enables the writing model to mention your website and product tag naturally in drafts.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Company or Product Name <span className="text-rose-500">*</span></label>
+                    <input 
+                      type="text" 
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder="e.g. AcmeSaaS Pro"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Industry or Niche Sector <span className="text-rose-500">*</span></label>
+                    <input 
+                      type="text" 
+                      value={formIndustry}
+                      onChange={(e) => setFormIndustry(e.target.value)}
+                      placeholder="e.g. Creator Economy / B2B AI Tooling"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Company Website URL <span className="text-slate-400 font-normal">(Optional)</span></label>
+                    <input 
+                      type="url" 
+                      value={formWebsite}
+                      onChange={(e) => setFormWebsite(e.target.value)}
+                      placeholder="https://acmesaas.com"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                    />
+                  </div>
+                  
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={loadSampleProfile}
+                      className="text-xs text-indigo-600 font-extrabold hover:underline"
+                    >
+                      ⚡ Shortcut: Load Sample Demo Data
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {onboardingStep === 2 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">What does it do? (Product Description) <span className="text-rose-500">*</span></label>
+                    <textarea 
+                      value={formDesc}
+                      onChange={(e) => setFormDesc(e.target.value)}
+                      rows={3}
+                      placeholder="e.g. A developer-first continuous integration service that runs test pipelines 10x faster using predictive asset caching."
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400 leading-relaxed resize-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Target Customer / Core Audience Persona <span className="text-rose-500">*</span></label>
+                    <input 
+                      type="text" 
+                      value={formAudience}
+                      onChange={(e) => setFormAudience(e.target.value)}
+                      placeholder="e.g. Solopreneurs, CTOs, Indie Hackers, Content creators"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {onboardingStep === 3 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Brand Tone &amp; Style Keywords <span className="text-rose-500">*</span></label>
+                    <input 
+                      type="text" 
+                      value={formTone}
+                      onChange={(e) => setFormTone(e.target.value)}
+                      placeholder="e.g. Witty, Bold, Analytical, Build-In-Public, Technical"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                      required
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">Helpful keywords are: contrarian, authentic, lesson-heavy, concise, energetic.</span>
+                  </div>
+
+                  <div className="mt-4 p-4.5 bg-indigo-50 border border-indigo-100 rounded-xl">
+                    <h4 className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-indigo-600" /> Ready to Dominate Socials!
+                    </h4>
+                    <p className="text-xs text-indigo-800 leading-relaxed font-medium">
+                      Your profile will save locally. When you feed any bullet points or URL notes to the engine, it automatically shapes the text matching **{formName || "your company"}** rules.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Form Actions Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                {onboardingStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep(onboardingStep - 1)}
+                    className="flex items-center gap-1 text-xs font-black text-slate-600 hover:text-slate-800 px-3 py-2 border border-slate-300 rounded-lg transition"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </button>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                {!companyProfile && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Skip and use dummy data
+                      setFormName("Solopreneur Build");
+                      setFormDesc("A personal micro-SaaS framework building tools for modern content creation.");
+                      setFormIndustry("Indie Software / Media Tech");
+                      setFormAudience("Indie Hackers, SaaS creators");
+                      setFormTone("Crisp, Build-In-Public, high-tempo");
+                      setFormWebsite("https://indiebuild.co");
+                      setTimeout(() => {
+                        const profile: CompanyProfile = {
+                          companyName: "Solopreneur Build",
+                          productDescription: "A personal micro-SaaS framework building tools for modern content creation.",
+                          targetAudience: "Indie Hackers, SaaS creators",
+                          industry: "Indie Software / Media Tech",
+                          toneOfVoice: "Crisp, Build-In-Public, high-tempo",
+                          website: "https://indiebuild.co"
+                        };
+                        setCompanyProfile(profile);
+                        localStorage.setItem("content_engine_company_profile", JSON.stringify(profile));
+                        setShowOnboarding(false);
+                      }, 100);
+                    }}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 text-xs font-bold rounded-lg transition"
+                  >
+                    Skip &amp; Use Sandbox
+                  </button>
+                )}
+
+                {onboardingStep < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onboardingStep === 1 && (!formName.trim() || !formIndustry.trim())) {
+                        alert("Please fill in the required details.");
+                        return;
+                      }
+                      setOnboardingStep(onboardingStep + 1);
+                    }}
+                    className="flex items-center gap-1 px-4.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold rounded-lg transition shadow-md shadow-indigo-100 cursor-pointer"
+                  >
+                    Next Step
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => saveCompanyProfile()}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold rounded-lg transition shadow-md shadow-indigo-100 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    Save &amp; Activate Profile
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ==================== HELPER DOCS & PROMPTS LIBRARY MODAL ==================== */}
+      {showDocsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in duration-200">
+            
+            <div className="bg-slate-900 px-6 py-5 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-lg font-extrabold font-display">Docs &amp; Playbooks Library</h3>
+              </div>
+              <button 
+                onClick={() => setShowDocsModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto text-slate-700 text-sm leading-relaxed">
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-base mb-1.5 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                  Optimizing Context Strategy
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Social media platforms reward focus. Instead of dumping a complete 4,000-word blog post or entire pitch deck, paste single sections, specific metrics, or product launch lists inside our <strong>Draft Notes</strong> box.
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <h4 className="font-extrabold text-slate-900 text-base mb-2.5 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Quick Copy Founder Prompts
+                </h4>
+                <p className="text-xs text-slate-400 mb-3 font-medium">Click any blueprint prompt to pre-fill the input notes automatically!</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => handleSelectPrompt("Acme DevTools just crossed $15,000 MRR today. Core statistics: 10,200 developers onboard, average CI build speeds decreased from 12 minutes to 85 seconds. Our core engine is written in Rust. We grew purely through SEO and sharing educational tools on Reddit and Hacker News. Major lesson learned: focus on speed first and pricing second.")}
+                    className="text-left p-3 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/40 transition cursor-pointer"
+                  >
+                    <span className="font-bold text-xs text-indigo-600 block mb-1">🚀 $15k MRR Milestone</span>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">How we reached $15k MRR, SEO, speed benchmarks and CI tools.</p>
+                  </button>
+
+                  <button 
+                    onClick={() => handleSelectPrompt("We made the difficult choice to drop our free tier entirely. Results over the last 30 days: server database usage fell by 60%, customer support tickets dropped by 80%, but our daily trial-to-paid conversion rate doubled! Our premium plan is $29/mo. Lesson: free users cost the most customer support time while paying users give actionable feedback.")}
+                    className="text-left p-3 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/40 transition cursor-pointer"
+                  >
+                    <span className="font-bold text-xs text-indigo-600 block mb-1">💡 dropping Free Tier Lesson</span>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">The hard metrics and changes from deprecating our free product tier.</p>
+                  </button>
+
+                  <button 
+                    onClick={() => handleSelectPrompt("Product update release notes v2.0: Added interactive canvas flowcharts, unified workspaces, local storage auto-save. Our goal is to save startup builders 8 hours per week. Try it out on our website.")}
+                    className="text-left p-3 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/40 transition cursor-pointer"
+                  >
+                    <span className="font-bold text-xs text-indigo-600 block mb-1">📦 Product Update Draft</span>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">Feature launch outline including saved times, canvas tool, auto-saves.</p>
+                  </button>
+
+                  <button 
+                    onClick={() => handleSelectPrompt("Why we migrated away from multi-cloud back to a single VPS on Hetzner: saved $1,200/mo, network latency fell by 20ms, deployment configurations decreased from 400 lines of YAML to 12. Multi-cloud is over-engineered for 95% of startups.")}
+                    className="text-left p-3 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/40 transition cursor-pointer"
+                  >
+                    <span className="font-bold text-xs text-indigo-600 block mb-1">⚙️ Architecture Migration</span>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">Contrarian technical piece regarding cloud bills and server hosting costs.</p>
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <h4 className="font-extrabold text-slate-900 text-base mb-1.5 flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-indigo-500" />
+                  Writing Formulas Applied
+                </h4>
+                <div className="bg-slate-50 rounded-xl p-4.5 text-xs text-slate-600 space-y-2">
+                  <p>Our underlying Gemini models use the following frameworks to optimize copy:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li><strong>Hook/Problem-Agitate-Solve (PAS)</strong>: Grabs instant attention with a bold statement or metrics on LinkedIn &amp; Twitter.</li>
+                    <li><strong>Markdown Readability</strong>: Strict spacing rules to guarantee copy is eye-safe and highly readable on mobile screens.</li>
+                    <li><strong>Value-First Reddit Rule</strong>: Strips sales words or marketing slogans. Provides raw code examples, transparent charts, or lessons.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button 
+                onClick={() => setShowDocsModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+              >
+                Close Library
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ==================== INTERACTIVE VIRAL TEMPLATES MODAL ==================== */}
+      {showTemplatesModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in duration-200">
+            
+            <div className="bg-indigo-900 px-6 py-5 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-indigo-300" />
+                <h3 className="text-lg font-extrabold font-display">Viral Framework Templates</h3>
+              </div>
+              <button 
+                onClick={() => setShowTemplatesModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-indigo-200 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <p className="text-xs text-slate-500 font-semibold mb-2">Select a high-converting formula structure. This will pre-fill your Draft Notes canvas so you can fill in your metrics and generate!</p>
+              
+              <div className="space-y-3.5">
+                {/* Template 1 */}
+                <div className="p-4 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/30 transition flex flex-col justify-between items-start gap-3">
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">Template 1: The Build-In-Public Milestone</span>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-black font-mono">HIGH ENGAGEMENT</span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-semibold mb-2">Great for sharing revenue peaks, launch days, or specific tech migrations.</p>
+                    <pre className="bg-slate-50 border border-slate-200 text-[11px] text-slate-500 p-3 rounded-lg overflow-x-auto font-mono whitespace-pre-wrap">
+{`We just hit [Milestone/Revenue] today.
+Here are the exact 3 metrics we tracked to get here:
+1. [Metric A] - [Details]
+2. [Metric B] - [Details]
+3. [Metric C] - [Details]
+
+The biggest contrarian lesson we learned along the way: [Lesson]`}
+                    </pre>
+                  </div>
+                  <button
+                    onClick={() => handleSelectTemplate(
+`We just hit $15k MRR today.
+Here are the exact 3 metrics we tracked to get here:
+1. Product active users grew to 12,000 weekly active developers.
+2. Server hosting bills reduced to $80/month using efficient cloud instances.
+3. Churn dropped to 1.5% by offering 24/7 technical chat support.
+
+The biggest contrarian lesson we learned along the way: do not try to build every requested feature. Say no to 90% of requests to keep the product simple and lightning fast.`
+                    )}
+                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-lg transition self-end cursor-pointer"
+                  >
+                    Use This Template Structure
+                  </button>
+                </div>
+
+                {/* Template 2 */}
+                <div className="p-4 border border-slate-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50/30 transition flex flex-col justify-between items-start gap-3">
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider">Template 2: The Contrarian Failure Lesson</span>
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-black font-mono">EDUCATIONAL</span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-semibold mb-2">Perfect for breaking down why an industry-standard method failed for you.</p>
+                    <pre className="bg-slate-50 border border-slate-200 text-[11px] text-slate-500 p-3 rounded-lg overflow-x-auto font-mono whitespace-pre-wrap">
+{`Everyone in SaaS says [Standard Advice].
+We did the exact opposite for the last 30 days.
+Here is what happened to our metrics:
+- [Change 1]
+- [Change 2]
+
+If you're a founder, don't blindly follow common playbooks. Do this instead: [Advice]`}
+                    </pre>
+                  </div>
+                  <button
+                    onClick={() => handleSelectTemplate(
+`Everyone in SaaS says you must offer a free trial to scale.
+We did the exact opposite for the last 30 days and put up a strict credit card wall.
+Here is what happened to our metrics:
+- Customer support requests dropped by 75% instantly.
+- Paid trial-to-paying conversion rates doubled.
+- Server database compute bills reduced by 50% as spam users vanished.
+
+If you're a founder, don't blindly follow common playbooks. Charge for your product from day one to filter out non-ideal users.`
+                    )}
+                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-lg transition self-end cursor-pointer"
+                  >
+                    Use This Template Structure
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button 
+                onClick={() => setShowTemplatesModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+              >
+                Close Templates
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ==================== CAMPAIGN TRACKS CHECKLIST MODAL ==================== */}
+      {showCampaignsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in duration-200">
+            
+            <div className="bg-slate-800 px-6 py-5 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-lg font-extrabold font-display">Campaign Tracks Planner</h3>
+              </div>
+              <button 
+                onClick={() => setShowCampaignsModal(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-xs text-indigo-900 leading-relaxed font-medium">
+                <strong>💡 Campaign tracks are structured checklists.</strong> They help solopreneurs and indie builders structure their daily/weekly social posting campaigns so they never run out of ideas. Check items off as you write and ship posts!
+              </div>
+
+              {/* Track A */}
+              <div>
+                <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-2.5 flex items-center gap-1.5 border-b border-slate-100 pb-1">
+                  🚀 Track 1: The MVP Launch Blitz (Day 1 - 5)
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-start gap-2.5 p-2 bg-slate-50 hover:bg-slate-100/50 rounded-lg transition">
+                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <strong className="text-slate-800">Day 1: The Birth of the Idea</strong>
+                      <p className="text-slate-500 mt-0.5 text-[11px]">Write about what problem inspired you to start building. Keep it raw and transparent.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-2 bg-slate-50 hover:bg-slate-100/50 rounded-lg transition">
+                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <strong className="text-slate-800">Day 2: The Core Tech Stack</strong>
+                      <p className="text-slate-500 mt-0.5 text-[11px]">Explain why you chose your specific database, language, or framework. Highlight simplicity.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-2 bg-slate-50 hover:bg-slate-100/50 rounded-lg transition">
+                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <strong className="text-slate-800">Day 3: The MVP Showcase</strong>
+                      <p className="text-slate-500 mt-0.5 text-[11px]">Share an image design layout or slide suggestion explaining exactly how the beta tool operates.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Track B */}
+              <div>
+                <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-2.5 flex items-center gap-1.5 border-b border-slate-100 pb-1">
+                  📈 Track 2: The Weekly Traction Pulse (Ongoing)
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-start gap-2.5 p-2 bg-slate-50 hover:bg-slate-100/50 rounded-lg transition">
+                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <strong className="text-slate-800">The Metric Milestone</strong>
+                      <p className="text-slate-500 mt-0.5 text-[11px]">Post any milestone metrics, revenue graphs, support ticks decrease, or performance speedups.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-2 bg-slate-50 hover:bg-slate-100/50 rounded-lg transition">
+                    <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <strong className="text-slate-800">The Hard Customer Feedback Lesson</strong>
+                      <p className="text-slate-500 mt-0.5 text-[11px]">Explain what a customer asked for, how it forced you to change course, and what you learned.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button 
+                onClick={() => setShowCampaignsModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+              >
+                Close Track Planner
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

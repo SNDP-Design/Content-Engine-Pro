@@ -123,7 +123,7 @@ app.post("/api/scrape", async (req, res): Promise<any> => {
 
 // 2. Generate content endpoint
 app.post("/api/generate", async (req, res): Promise<any> => {
-  const { source, sourceType, style, audience, toneKeywords } = req.body;
+  const { source, sourceType, style, audience, toneKeywords, companyDetails } = req.body;
 
   if (!source) {
     return res.status(400).json({ error: "Source notes or scraped text are required" });
@@ -132,6 +132,20 @@ app.post("/api/generate", async (req, res): Promise<any> => {
   try {
     const ai = getGeminiClient();
 
+    let companyContext = "";
+    if (companyDetails && companyDetails.companyName) {
+      companyContext = `
+THE FOUNDER'S COMPANY PROFILE:
+- Company Name: ${companyDetails.companyName}
+- Website: ${companyDetails.website || "Not provided"}
+- Industry/Niche: ${companyDetails.industry || "Not provided"}
+- What we do/Product Description: ${companyDetails.productDescription || "Not provided"}
+- Target Audience/Persona: ${companyDetails.targetAudience || "Not provided"}
+- Core Brand Tone: ${companyDetails.toneOfVoice || "Not provided"}
+
+Please make sure the generated content is highly relevant, contexts our product/service accurately, and references our company name ("${companyDetails.companyName}") naturally if appropriate. Avoid generic posts. Make it sound like it's specifically written for this company.`;
+    }
+
     const systemInstruction = `You are "Content Engine" - an elite social media ghostwriter and strategist for startup founders.
 You turn rough source notes, pitch decks, ideas, or articles into platform-optimized, high-impact copy.
 You generate posts for four major platforms all at once:
@@ -139,6 +153,7 @@ You generate posts for four major platforms all at once:
 2. X/Twitter (Punchy, under 280 characters strictly, bold statement hooks, bullet speed-learnings, high visual alignment)
 3. Instagram (Engaging caption with visual hook, detailed description of carousel slide design or focal image graphic, list of relevant tags)
 4. Reddit (catchy and community-native post with an informative Title and a Markdown Body formatted for tech/founder subreddits. Must be value-first, zero marketing fluff/hype, raw details and structured list of lessons).
+${companyContext}
 
 You are generating posts customized with the following parameters:
 - Hook/Narrative Style Choice: ${style || "Thought Leadership"}
@@ -243,7 +258,7 @@ Output response in complete, well-formed JSON format matching the schema exactly
 
 // 3. Refine a single channel post endpoint
 app.post("/api/refine", async (req, res): Promise<any> => {
-  const { platform, currentContent, refinePrompt, originalSource } = req.body;
+  const { platform, currentContent, refinePrompt, originalSource, companyDetails } = req.body;
 
   if (!platform || !currentContent || !refinePrompt) {
     return res.status(400).json({ error: "Missing required refine inputs" });
@@ -252,9 +267,24 @@ app.post("/api/refine", async (req, res): Promise<any> => {
   try {
     const ai = getGeminiClient();
 
+    let companyContext = "";
+    if (companyDetails && companyDetails.companyName) {
+      companyContext = `
+THE FOUNDER'S COMPANY PROFILE:
+- Company Name: ${companyDetails.companyName}
+- Website: ${companyDetails.website || "Not provided"}
+- Industry/Niche: ${companyDetails.industry || "Not provided"}
+- What we do/Product Description: ${companyDetails.productDescription || "Not provided"}
+- Target Audience/Persona: ${companyDetails.targetAudience || "Not provided"}
+- Core Brand Tone: ${companyDetails.toneOfVoice || "Not provided"}
+
+Make sure any rewritten post remains highly relevant and contextually aligned with this profile.`;
+    }
+
     const systemInstruction = `You are "Content Engine" - an elite social media strategist for startup founders.
 The user wants to refine/revise a specific social media post for the channel: "${platform}".
 The user has provided the current post content and feedback instruction. Rewrite the post to fully satisfy the feedback while remaining highly tailored to the specific channel style rules and size limits.
+${companyContext}
 
 CHANNEL STYLE GUIDE REMINDERS:
 - LinkedIn: narrative, spacing, story-oriented hook.
